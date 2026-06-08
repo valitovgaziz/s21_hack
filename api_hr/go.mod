@@ -1,4 +1,4 @@
-module api_tp
+module api_hr
 
 go 1.25.1
 
