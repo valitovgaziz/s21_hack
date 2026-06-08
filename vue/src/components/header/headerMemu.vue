@@ -27,6 +27,16 @@
                     {{ t('messages.writeFeedback') }}
                 </router-link>
             </li>
+            <li v-on:click="$refs.surveys.$el.click()">
+                <router-link to="/surveys" ref="surveys">
+                    Опросы
+                </router-link>
+            </li>
+            <li v-on:click="$refs.notif.$el.click()">
+                <router-link to="/notifications/settings" ref="notif">
+                    Уведомления
+                </router-link>
+            </li>
             <li v-on:click="$refs.registration.$el.click()">
                 <router-link to="/registration" ref="registration">
                     {{ t('messages.registration') }}

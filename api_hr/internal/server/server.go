@@ -29,21 +29,21 @@ func New(db *gorm.DB) *Server {
 }
 
 func (s *Server) configureRouter(db *gorm.DB) {
-	// Общие middleware
 	for _, middleware := range handlers.CommonMiddleware() {
 		s.router.Use(middleware)
 	}
 
-	// Health check
 	s.router.Get("/health", s.healthCheck)
 
-	// API routes
 	s.router.Route("/v1", func(r chi.Router) {
 		r.Get("/check", s.healthCheck)
 		s.setupUserRoutes(r, db)
+		s.setupSurveyRoutes(r, db)
+		s.setupResponseRoutes(r, db)
+		s.setupNotificationRoutes(r, db)
+		s.setupAnalyticsRoutes(r, db)
 	})
 
-	// Для отладки - выводим все маршруты
 	chi.Walk(s.router, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		fmt.Printf("[%s] %s\n", method, route)
 		return nil
@@ -54,18 +54,16 @@ func (s *Server) setupUserRoutes(r chi.Router, db *gorm.DB) {
 	userRepo := repository.NewUserRepository(s.db)
 	userService := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
-
 	authHandler := &handlers.AuthHandler{DB: db}
 
-	// Публичные маршруты
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
-		r.Get("/check", s.healthCheck)
-
+		r.Post("/login-phone", authHandler.LoginPhone)
+		r.Post("/verify-otp", authHandler.VerifyOTP)
+		r.Get("/validate", authHandler.ValidateToken)
 	})
 
-	// Защищенные маршруты
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
 
@@ -73,14 +71,80 @@ func (s *Server) setupUserRoutes(r chi.Router, db *gorm.DB) {
 			r.Get("/", userHandler.GetAllUsers)
 			r.Post("/", userHandler.CreateUser)
 			r.Get("/{id}", userHandler.GetUser)
-			r.Get("/check", s.healthCheck)
+		})
+	})
+}
+
+func (s *Server) setupSurveyRoutes(r chi.Router, db *gorm.DB) {
+	surveyRepo := repository.NewSurveyRepository(s.db)
+	responseRepo := repository.NewResponseRepository(s.db)
+	surveyService := service.NewSurveyService(surveyRepo, responseRepo)
+	surveyHandler := handlers.NewSurveyHandler(surveyService)
+
+	r.Route("/surveys", func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.AuthMiddleware)
+			r.Post("/", surveyHandler.Create)
+			r.Put("/{id}", surveyHandler.Update)
+			r.Delete("/{id}", surveyHandler.Delete)
+			r.Post("/{id}/publish", surveyHandler.Publish)
+			r.Post("/{id}/complete", surveyHandler.Complete)
+			r.Post("/{id}/archive", surveyHandler.Archive)
+			r.Get("/{id}/stats", surveyHandler.GetStats)
 		})
 
+		r.Get("/", surveyHandler.GetAll)
+		r.Get("/{id}", surveyHandler.GetByID)
+	})
+}
+
+func (s *Server) setupResponseRoutes(r chi.Router, db *gorm.DB) {
+	responseRepo := repository.NewResponseRepository(s.db)
+	surveyRepo := repository.NewSurveyRepository(s.db)
+	responseService := service.NewResponseService(responseRepo, surveyRepo)
+	responseHandler := handlers.NewResponseHandler(responseService)
+
+	r.Route("/responses", func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware)
+		r.Post("/{surveyId}/start", responseHandler.StartSurvey)
+		r.Post("/{responseId}/answer", responseHandler.SubmitAnswer)
+		r.Post("/{responseId}/complete", responseHandler.CompleteSurvey)
+		r.Get("/{id}", responseHandler.GetResponse)
+		r.Get("/survey/{surveyId}", responseHandler.GetSurveyResponses)
+		r.Get("/survey/{surveyId}/check", responseHandler.CheckResponded)
+	})
+}
+
+func (s *Server) setupNotificationRoutes(r chi.Router, db *gorm.DB) {
+	notifRepo := repository.NewNotificationRepository(s.db)
+	notifService := service.NewNotificationService(notifRepo)
+	notifHandler := handlers.NewNotificationHandler(notifService)
+
+	r.Route("/notifications", func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware)
+		r.Post("/subscribe", notifHandler.Subscribe)
+		r.Get("/subscriptions", notifHandler.GetSubscriptions)
+		r.Delete("/subscriptions/{id}", notifHandler.Unsubscribe)
+		r.Get("/preferences", notifHandler.GetPreferences)
+		r.Put("/preferences", notifHandler.UpdatePreferences)
+		r.Get("/logs/{surveyId}", notifHandler.GetSurveyLogs)
+	})
+}
+
+func (s *Server) setupAnalyticsRoutes(r chi.Router, db *gorm.DB) {
+	surveyRepo := repository.NewSurveyRepository(s.db)
+	responseRepo := repository.NewResponseRepository(s.db)
+	notifRepo := repository.NewNotificationRepository(s.db)
+	analyticsService := service.NewAnalyticsService(surveyRepo, responseRepo, notifRepo)
+	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
+
+	r.Route("/analytics", func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware)
+		r.Get("/surveys/{surveyId}", analyticsHandler.GetSurveyAnalytics)
 	})
 }
 
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
-	// Проверяем соединение с БД
 	sqlDB, err := s.db.DB()
 	if err != nil {
 		http.Error(w, "Database connection error", http.StatusServiceUnavailable)

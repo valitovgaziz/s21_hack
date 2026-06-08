@@ -55,6 +55,42 @@ const routes = [
     component: () => import('../views/RestObjectView.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/surveys',
+    name: 'surveys',
+    component: () => import('../views/surveys/SurveyListView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/surveys/new',
+    name: 'survey-new',
+    component: () => import('../views/surveys/SurveyBuilderView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/surveys/:id/edit',
+    name: 'survey-edit',
+    component: () => import('../views/surveys/SurveyBuilderView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/survey/:id',
+    name: 'survey-take',
+    component: () => import('../views/surveys/SurveyTakeView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/analytics/:id',
+    name: 'survey-analytics',
+    component: () => import('../views/surveys/SurveyAnalyticsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/notifications/settings',
+    name: 'notification-settings',
+    component: () => import('../views/surveys/NotificationSettingsView.vue'),
+    meta: { requiresAuth: true }
+  },
 ];
 
 const router = createRouter({
