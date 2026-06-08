@@ -2,8 +2,8 @@ package service
 
 import (
 	"errors"
-	"api_tp/internal/models"
-	"api_tp/internal/repository"
+	"api_hr/internal/models"
+	"api_hr/internal/repository"
 
 	"golang.org/x/crypto/bcrypt"
 )

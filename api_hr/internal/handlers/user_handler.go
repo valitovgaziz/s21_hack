@@ -6,8 +6,8 @@ import (
     "strconv"
 
     "github.com/go-chi/chi/v5"
-    "api_tp/internal/models"
-    "api_tp/internal/service"
+    "api_hr/internal/models"
+    "api_hr/internal/service"
 )
 
 type UserHandler struct {

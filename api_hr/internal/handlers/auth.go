@@ -3,8 +3,8 @@ package handlers
 
 import (
     "net/http"
-	"api_tp/internal/models"
-	"api_tp/internal/utils"
+	"api_hr/internal/models"
+	"api_hr/internal/utils"
     
     "gorm.io/gorm"
 )

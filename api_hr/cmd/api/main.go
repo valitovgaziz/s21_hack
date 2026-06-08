@@ -2,9 +2,9 @@ package main
 
 import (
     "log"
-    "api_tp/internal/config"
-    "api_tp/internal/server"
-    "api_tp/pkg/database"
+    "api_hr/internal/config"
+    "api_hr/internal/server"
+    "api_hr/pkg/database"
 )
 
 func main() {
