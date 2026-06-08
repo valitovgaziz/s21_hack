@@ -3,7 +3,6 @@ vue/node_modules/*
 *.log
 dist/
 build/
-.env
 .DS_Store
 .idea/
 .vscode/
